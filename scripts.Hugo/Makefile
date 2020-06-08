@@ -30,50 +30,55 @@ gitX:
 
 up:
 	pwd
-	nice -n 19 git push -u origin master
+	nice -n 17 git push -u origin master
 e:
 	vim Makefile.env
 m:
 	vim Makefile
 gs:
-	nice -n 19 git status
+	nice -n 17 git status
 gc:
-	nice -n 19 git commit -a
+	nice -n 17 git commit -a
 
 gcXmmm:=$(shell (LC_ALL=C date +"%Y%m%d_%H%M%p" ; cat /etc/timezone )|tr "/\r\n-" _)
 gcX:
-	nice -n 19 git commit -m $(gcXmmm)
+	nice -n 17 git commit -m $(gcXmmm)
 	
 
 gd :
-	nice -n 19 git diff
+	nice -n 17 git diff
 
 ga :
-	nice -n 19 git add .
+	nice -n 17 git add .
 rp:
-	@echo nice -n 19 git repack -a -d --window-memory 10m --max-pack-size 20m
-	nice -n 19 git config pack.windowMemory 10m
-	nice -n 19 git config pack.packSizeLimit 20m
+	@echo nice -n 17 git repack -a -d --window-memory 10m --max-pack-size 20m
+	nice -n 17 git config pack.windowMemory 10m
+	nice -n 17 git config pack.packSizeLimit 20m
 
 
 
 
 define help_textHU
 
-	rg   -> regen            : regen all hugo
-	rgt  -> regenTestVersion : regen all hugo use test version of hugo
-	s    -> server           : run hugo   server to test local
-	s2   -> server2          : run python server to test local 33221
-	s3   -> server3          : run python server to test local 33223
-	s5   -> server5          : run python server to test local 33225
-	vh   -> hugo_version     : show hugo version
-	gus  -> git_up_dusum     : ga gc  up ; du -sh .git ; sync
-	gusX -> git_up_dusumX    : ga gcX up ; du -sh .git ; sync
-	rvs  -> regen_vh_s2      : regen hugo_version server2
-	v1   -> vim test file 01 for hugo
-	v2   -> vim test file 02 for hugo
-	v3   -> vim test file 03 for hugo
-	m3u  -> gen the m3u
+	um    -> update_makefile  : git pull  && cat Makefile --- ../Makefile 
+	rg    -> regen            : regen all hugo
+	rgt   -> regenTestVersion : regen all hugo use test version of hugo
+	s     -> server           : run hugo   server to test local
+	s2    -> server2          : run python server to test local 33221
+	s3    -> server3          : run python server to test local 33223
+	s5    -> server5          : run python server to test local 33225
+	vh    -> hugo_version     : show hugo version
+	gus   -> git_up_dusum     : ga gc  up ; du -sh .git ; sync
+	gusX  -> git_up_dusumX    : ga gcX up ; du -sh .git ; sync
+	gusXt -> gusX_for_theme   : 
+	X     -> um rg gusX   
+	rvs   -> regen_vh_s2      : regen hugo_version server2
+	v1    -> vim test file 01 for hugo
+	v2    -> vim test file 02 for hugo
+	v3    -> vim test file 03 for hugo
+	m3u   -> gen the m3u
+	byauthor   -> gen the byauthor
+	wav   -> deal with 22.wav
 
 endef
 
@@ -88,7 +93,16 @@ $(if $(testHugo1),$(eval UseHugoOnTop:=1),\
 	$(if $(testHugo3),$(eval UseInTheme:=1),$(error "not_fit_dir"))\
 	))
 
-pythonVersion:=$(shell python --version |awk '{printf $$2}'|awk -F. '{print $$1}')
+
+#pythonVersion:=$(shell python --version |awk '{printf $$2}'|awk -F. '{print $$1}')
+pythonVersion3exist:=$(shell which python3)
+ifeq (,$(pythonVersion3exist))
+pythonVersion:=2
+pyBin:=python2
+else
+pythonVersion:=3
+pyBin:=python3
+endif
 
 ############################################### UseHugoOnTop  start
 ############################################### UseHugoOnTop  start
@@ -129,23 +143,27 @@ updateMakefile :=  [ ! -f scripts.Hugo/Makefile -o ! -f scripts.Hugo/themes/Make
 
 rgt:regenTestVersion
 regenTestVersion: regenBaseCheck
-	cd scripts.Hugo/ && nice -n 19 hugo.testing         && hugo.testing version
+	cd scripts.Hugo/ && nice -n 17 hugo.testing         && hugo.testing version
 	$(rmXML)
 	$(updateMakefile)
 
+
+rgp : regen_pure 
+regen_pure : regenBaseCheck
+	cd scripts.Hugo/ && nice -n 17 hugo       && hugo version
+	$(rmXML)
+	$(updateMakefile)
+
+um update_makefile :
+	(cd scripts.Hugo/themes/ && git pull  && cat Makefile > ../Makefile )
 
 rg:regen
-regen: regenBaseCheck
-	make m3u
-	make sed01
-	cd scripts.Hugo/ && nice -n 19 hugo       && hugo version
-	$(rmXML)
-	$(updateMakefile)
+regen: byauthor wav m3u sed01 regen_pure
 
 s : server
 server:
 	@[ -f scripts.Hugo/config.toml ] || ( echo "why_no_41 file <scripts.Hugo/config.toml> exist ?" ; exit 41 )
-	cd scripts.Hugo/ && nice -n 19 hugo server --disableFastRender
+	cd scripts.Hugo/ && nice -n 17 hugo server --disableFastRender
 
 # hddps://themes.gohugo.io/
 # hddps://gohugo.io/themes/
@@ -163,17 +181,17 @@ pyHttP:=$(pyHttp$(pythonVersion))
 s2: server2
 server2:
 	[ -f scripts.Hugo/config.toml ] || ( echo "why_no_51 file <scripts.Hugo/config.toml> exist ?" ; exit 51 )
-	cd public/ && python -m $(pyHttP) 33221
+	cd public/ && $(pyBin) -m $(pyHttP) 33221
 
 s3: server3
 server3:
 	[ -f scripts.Hugo/config.toml ] || ( echo "why_no_51 file <scripts.Hugo/config.toml> exist ?" ; exit 51 )
-	cd public/ && python -m $(pyHttP) 33223
+	cd public/ && $(pyBin) -m $(pyHttP) 33223
 
 s5: server5
 server5:
 	[ -f scripts.Hugo/config.toml ] || ( echo "why_no_51 file <scripts.Hugo/config.toml> exist ?" ; exit 51 )
-	cd public/ && python -m $(pyHttP) 33225
+	cd public/ && $(pyBin) -m $(pyHttP) 33225
 
 m3u  :
 #	m3u8_gen_01.sh https://`cat CNAME`/blog     docs/all.m3u8                                 scripts.Hugo/content/blog
@@ -182,6 +200,23 @@ m3u  :
 #	mkdir -p scripts.Hugo/content/hot/endothers/
 #	m3u8_gen_01.sh https://`cat CNAME`/blog     scripts.Hugo/content/hot/endothers/all.m3u8   scripts.Hugo/content/blog
 	m3u8_gen_01.sh https://`cat CNAME`/blog     scripts.Hugo/content/all.m3u8                 scripts.Hugo/content/blog
+
+byauthor  :
+	genHugoAuthor.sh
+
+wav:
+	wav_gen_22_wav_list.sh    https://`cat CNAME`/blog     scripts.Hugo/content/all.m3u8      scripts.Hugo/content/blog
+	[ $$(find content/ -name 22.wav |wc -l) -eq 0 ] \
+		&& echo "22.wav check ok" \
+		|| ( echo \
+		&& ls -l `find content/ -name 22.wav` \
+		&& echo \
+		&& echo "check why does 22.wav exist ?" \
+		&& echo "nice -n 19 ffmpeg -i " \
+		&& echo "                        -vn -ac 1  22.wav" \
+		&& echo \
+		&& exit 78 \
+		)
 
 export help_textHU
 endif
@@ -195,7 +230,7 @@ endif
 ifdef    UseHugoUnderScript
 $(info using    UseHugoUnderScript )
 
-rg rgt regen     s2 server2     s3 server3     s5 server5     s server m3u rgX gcX v1 v2 v3 :
+rg rgt regen     s2 server2     s3 server3     s5 server5     s server m3u wav rgX gcX v1 v2 v3 :
 	cd .. && make $@
 
 
@@ -247,6 +282,11 @@ $(eval $(foreach aa1,$(myCodehtml_list01),$(call myCodeTP01,$(aa1))))
 
 gus:  git_up_dusum 
 gusX: git_up_dusumX
+
+X : um rg gusX   
+
+gusXt gusX_for_theme : scripts.Hugo/themes/Makefile    
+	make -C scripts.Hugo/themes/    gusX 
 git_up_dusum  : ga gc  up 
 	du -sh .git 
 	pwd
@@ -270,20 +310,27 @@ export sed01XXX11:=\
 	{{< my2m3uexist "music.xspf"        "blue"   "red"    " V单曲 " >}} \
 	{{< my2m3uforce "/all.xspf"         "green"  "black"  " V全部 " >}} \
 	{{< my2m3uforce "/hot/helpxspf/"    "blue"   "red"    " 播放器 " >}} \
+	{{< mybr2 >}} \
 	{{< my2m3uforce "/hot/endothers/"   "green"  "blue"   " 目录 " >}} \
 	{{< my2m3uexist "music.m3u8"        "blue"   "red"    " M1 " >}} \
 	{{< my2m3uforce "/all.m3u8"         "green"  "black"  " M2 " >}} \
 
 export sed01XXX12:=\
-	{{< my2buttoncopy2clip "music.xspf"        "blue"   "red"    " 单曲"  "复制 VLC 播放器使用的链接：单曲" >}} \
-	{{< my2buttoncopy2clip "/all.xspf"         "green"  "black"  " 全部"  "复制 VLC 播放器使用的链接：全部" >}} \
-	{{< my2buttoncopy2clip "music.m3u8"        "blue"   "red"    " M1 "    "复制 IPTV 播放器使用的链接：单曲" >}} \
-	{{< my2buttongoto      "/hot/helpxspf/"    "green"  "blue"   " 播放器" "如何使用 VLC 播放器或者 IPTV 播放器的教程" >}} \
+	{{< my2buttoncopy2clip "music.xspf"        "blue"   "red"    " 单曲 "  "复制 VLC 播放器使用的链接：单曲" >}} \
+	{{< my2buttoncopy2clip "/all.xspf"         "green"  "black"  " 全部 "  "复制 VLC 播放器使用的链接：全部" >}} \
+	{{< my2buttoncopy2clip "music.m3u8"        "blue"   "red"    " M3U  "    "复制 M3U 播放器使用的链接：单曲" >}} \
+	{{< mybr2 >}} \
+	{{< my2buttoncopy2clip ""                  "green"  "black"  " 本页 "    "复制 本页的网址 " >}} \
+	{{< my2buttoncopy2clip "/"                 "black"  "red"    " 主站 "    "复制 主站的网址 " >}} \
+	{{< mybr2 >}} \
 	{{< my2buttongoto      "/hot/endothers/"   "blue"   "red"    " 月份"   "转到月份总目录" >}} \
 	{{< my2buttongoto      "/hot/alltags/"     "green"  "blue"   " 列表"   "转到文章总列表" >}} \
+	{{< my2buttongoto      "/hot/helpxspf/"    "green"  "blue"   " 播放器" "如何使用 VLC 播放器或者 IPTV 播放器的教程" >}} \
 
 sed01XXX21:={{< my2m3uexist "music.xspf"
 sed01XXX22:={{< my2buttoncopy2clip "music.xspf"
+
+#sedFIND01:=find content/blog/ -name "*.md" -printf "%T@  %p\n"|sort -n -r |grep -v '/end0.\\.md'
 
 sed00:
 	for aa1 in `find scripts.Hugo/content/blog/ -name "*.md" |grep -v "end0.\\.md" ` ; do \
